@@ -12,6 +12,11 @@
 
 #define STRING_SIZE 1024
 
+//hardcoding the following quantities
+const char clientVisitorName[] = "Mendoza-Lizotte"; //size = 16 with null-terminating character
+const unsigned short int serverSecretCode = 54321;
+const char serverTravelLocation[] = "Long-Island"; //size = 12 with null-terminating character
+
 //unsigned short int == 2 bytes
 //unsigned int == 4 bytes
 //struct of all messages
@@ -20,10 +25,10 @@ struct Message {
    unsigned short int clientPortNum;
    unsigned short int serverPortNum;
    unsigned short int secretCode;
+   char* text; //**DONT NEED TO DO A NETWORK TO HOST OR VICE VERSA CONVERSION ON STRINGS
 };
 
 int main(void) {
-   printf("size of unsigned short int: %d\nsize of unsigned int: %d\n",(int)sizeof(unsigned short int),(int)sizeof(unsigned int));
 
    int sock_client;  /* Socket used by client */
 
@@ -56,7 +61,9 @@ int main(void) {
    /* initialize server address information */
 
    printf("Enter hostname of server: ");
-   scanf("%s", server_hostname);
+   printf("hardcoding localhost for now\n");
+   //scanf("%s", server_hostname); PUT BACK IN WHEN NOT HARD CODING
+   sprintf(server_hostname,"localhost");//REMOVE WHEN NOT HARDCODING
    if ((server_hp = gethostbyname(server_hostname)) == NULL) {
       perror("Client: invalid server hostname");
       close(sock_client);
@@ -64,7 +71,9 @@ int main(void) {
    }
 
    printf("Enter port number for server: ");
-   scanf("%hu", &server_port);
+   printf("hardcoding 46298 for now\n");
+   //scanf("%hu", &server_port); PUT BACK IN WHEN NOT HARD CODING
+   server_port = (unsigned short int)46298;//REMOVE WHEN NOT HARDCODING
 
    /* Clear server address structure and initialize with server address */
    memset(&server_addr, 0, sizeof(server_addr));

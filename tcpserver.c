@@ -18,6 +18,10 @@
 
 #define SERV_TCP_PORT 46298
 
+//hardcoding the following quantities
+const char clientVisitorName[] = "Mendoza-Lizotte"; //size = 16 with null-terminating character
+const unsigned short int serverSecretCode = 54321;
+const char serverTravelLocation[] = "Long-Island"; //size = 12 with null-terminating character
 //unsigned short int == 2 bytes
 //unsigned int == 4 bytes
 //struct of all messages
@@ -26,6 +30,7 @@ struct Message {
    unsigned short int clientPortNum;
    unsigned short int serverPortNum;
    unsigned short int secretCode;
+   char* text;
 };
 
 int main(void) {
