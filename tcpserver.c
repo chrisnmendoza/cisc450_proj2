@@ -1,6 +1,6 @@
 /* tcpserver.c */
-/* Programmed by Adarsh Sethi */
-/* Sept. 19, 2021 */    
+/* Programmed by Christopher-Neil Mendoza and David Lizotte */
+/* 16 November, 2021 */    
 
 #include <ctype.h>          /* for toupper */
 #include <stdio.h>          /* for standard I/O functions */
@@ -16,7 +16,17 @@
    incoming requests from clients. You should change this to a different
    number to prevent conflicts with others in the class. */
 
-#define SERV_TCP_PORT 46165
+#define SERV_TCP_PORT 46298
+
+//unsigned short int == 2 bytes
+//unsigned int == 4 bytes
+//struct of all messages
+struct Message {
+   unsigned short int stepNum;
+   unsigned short int clientPortNum;
+   unsigned short int serverPortNum;
+   unsigned short int secretCode;
+};
 
 int main(void) {
 

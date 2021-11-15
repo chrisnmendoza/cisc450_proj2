@@ -1,6 +1,6 @@
 /* tcp_ client.c */ 
-/* Programmed by Adarsh Sethi */
-/* Sept. 19, 2021 */     
+/* Programmed by Christopher-Neil Mendoza and David Lizotte */
+/* 16 November, 2021 */       
 
 #include <stdio.h>          /* for standard I/O functions */
 #include <stdlib.h>         /* for exit */
@@ -12,7 +12,18 @@
 
 #define STRING_SIZE 1024
 
+//unsigned short int == 2 bytes
+//unsigned int == 4 bytes
+//struct of all messages
+struct Message {
+   unsigned short int stepNum;
+   unsigned short int clientPortNum;
+   unsigned short int serverPortNum;
+   unsigned short int secretCode;
+};
+
 int main(void) {
+   printf("size of unsigned short int: %d\nsize of unsigned int: %d\n",(int)sizeof(unsigned short int),(int)sizeof(unsigned int));
 
    int sock_client;  /* Socket used by client */
 

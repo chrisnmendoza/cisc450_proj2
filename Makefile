@@ -1,6 +1,6 @@
 CC= /usr/bin/gcc
 
-all:	tcpclient tcpserver udpclient udpserver
+all:	tcpclient tcpserver
 
 tcpclient: tcpclient.c;
 	${CC} tcpclient.c -o tcpclient
