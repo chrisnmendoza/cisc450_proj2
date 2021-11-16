@@ -12,7 +12,7 @@
 
 #define STRING_SIZE 1024   
 #define BUFF_LEN 84 //visitor name 80 digits, null character, commas, spaces, EOF
-
+#define ENTRY_LEN 94 //step number 1 digit, client port number 5 digits, visitor name 80 digits, commas, spaces, EOF, newline
 /* SERV_TCP_PORT is the port number on which the server listens for
    incoming requests from clients. You should change this to a different
    number to prevent conflicts with others in the class. */
@@ -40,42 +40,140 @@ struct Visitor {
    char currentClientName[80];
 };
 
-struct Visitor visitor;
+struct Message message; //holds data from received or sent messages
+struct Visitor entry; //holds data for an entry in Visitors.txt
+
+void updateVisitors() {
+   FILE *fp = fopen("./Visitors.txt", "r");
+   FILE *tempFile = fopen("./tempVisitors.txt","w+");
+   int foundMatch = 0;
+   int scanResult;
+   int firstLine = 1;
+   while((scanResult = getVisitorData(fp)) != EOF) {
+      if(!firstLine) { //puts newline between entries
+         fputs("\n",tempFile);
+      }
+      firstLine = 0;
+      if(entry.currentClientPort == message.clientPort) {
+         printf("found match!\n");
+         foundMatch = 1;
+         writeLineToTemp(tempFile, 1);
+      }
+      else {
+         writeLineToTemp(tempFile, 0);
+      }
+   }
+   printf("scan gave value of %d, which is EOF\n",scanResult);
+   if(!foundMatch) {
+      entry.currentStep = message.step;
+      entry.currentClientPort = message.clientPort;
+      strncpy(entry.currentClientName,message.text,80);
+      printf("no existing entries match, make new entry\n");
+      fputs("\n",tempFile);
+      writeLineToTemp(tempFile, 0);
+   }
+   fclose(fp);
+   fclose(tempFile);
+   system("mv ./tempVisitors.txt ./Visitors.txt ");
+}
+
 
 int getVisitorData(FILE *fp) {
    int scanResult;
    char visitorBuffer[BUFF_LEN];
    fscanf(fp,"%s",visitorBuffer);
-   sscanf(visitorBuffer, "%hu", &(visitor.currentStep));
-   printf("step: %hu\n",visitor.currentStep);
+   sscanf(visitorBuffer, "%hu", &(entry.currentStep));
+   printf("step: %hu\n",entry.currentStep);
    fscanf(fp,"%s",visitorBuffer);
-   sscanf(visitorBuffer, "%hu", &(visitor.currentClientPort));
-   printf("client port: %hu\n",visitor.currentClientPort);
+   sscanf(visitorBuffer, "%hu", &(entry.currentClientPort));
+   printf("client port: %hu\n",entry.currentClientPort);
    scanResult = fscanf(fp,"%s",visitorBuffer);
-   strncpy(visitor.currentClientName,visitorBuffer,BUFF_LEN-1);
-   printf("client name: %s\n",visitor.currentClientName);
+   strncpy(entry.currentClientName,visitorBuffer,BUFF_LEN-1);
+   printf("client name: %s\n",entry.currentClientName);
    return scanResult;
 }
 
-int main(void) {
 
-   FILE *fp;
-   char *line = NULL;
-   size_t len = 0;
-   ssize_t nread;
-   //char travelBuff[98]; //step 1 digit, port number 5 digits, secret code 5 digits, place 80 digits, null character, and spaces and commas
-   int stepNum;
-
-   fp = fopen("./Visitors.txt", "r");
-   int scanResult;
-
-   while(scanResult != EOF) {
-      scanResult = getVisitorData(fp);
-      if(scanResult == EOF) {
-         printf("scan gave value of %d, which is EOF\n",scanResult);
+void writeLineToTemp(FILE *dst, int incrementStep) {
+   char tempFileBuffer[ENTRY_LEN];
+   if(incrementStep) { //means found entry match
+      printf("validating info sent\n");
+      if((entry.currentStep == 1 && message.serverPort == SERV_TCP_PORT)
+         || (entry.currentStep == 2 && message.serverPort == SERV_TCP_PORT && message.secretCode == serverSecretCode)) 
+      {
+         printf("validated!\n");
+         printf("increment step\n");
+         sprintf(tempFileBuffer,"%hu, %hu, %s",entry.currentStep + 1,message.clientPort,message.text);
+         fputs(tempFileBuffer,dst);
+      }
+      else {
+         printf("INVALID AUTHENTICATION\n");
+         sprintf(tempFileBuffer,"%hu, %hu, %s",entry.currentStep,entry.currentClientPort,entry.currentClientName);
+         fputs(tempFileBuffer,dst);
       }
    }
-   fclose(fp);
+   else {
+      printf("just copy info as is\n");
+      sprintf(tempFileBuffer,"%hu, %hu, %s",entry.currentStep,entry.currentClientPort,entry.currentClientName);
+      fputs(tempFileBuffer,dst);
+   }
+}
+
+
+void determineSendConfig(void) {
+   switch(entry.currentStep) {
+      case 1:
+         printf("current step is step 1, go to step 2\n");
+         printf("server should send step = 2, client and server port numbers, server secret code\n");
+         break;
+      case 2:
+         printf("current step is step 2, go to step 3\n");
+         printf("server should send step = 3, client and server port numbers, secret code, and server's travel location\n");
+         break;
+      default:
+         printf("idk a default\n");
+   }
+}
+
+
+int main(void) {
+   //for testing purposes, hard code what a message WOULD send
+   //assume sending first message on the port
+   char clientText[] = "*";
+
+   //new entry
+   message.step = 1;
+   message.clientPort = 19624;
+   message.serverPort = 0;
+   message.secretCode = 0;
+   message.text = clientText;
+   updateVisitors();
+   
+   //existing entry
+   message.step = 2;
+   message.clientPort = 12345;
+   message.serverPort = SERV_TCP_PORT;
+   message.secretCode = 0;
+   message.text = clientText;
+   updateVisitors();
+
+   //existing entry bad secret code
+   message.step = 0;
+   message.clientPort = 12345;
+   message.serverPort = SERV_TCP_PORT;
+   message.secretCode = serverSecretCode - 5;
+   message.text = clientText;
+   updateVisitors();
+
+   char clientText2[] = "fortnites-atfreddys";
+   //existing entry final step
+   //2, 25813, abc
+   message.step = 0;
+   message.clientPort = 25813;
+   message.serverPort = SERV_TCP_PORT;
+   message.secretCode = serverSecretCode;
+   message.text = clientText2;
+   updateVisitors();
 
    int sock_server;  /* Socket on which server listens to clients */
    int sock_connection;  /* Socket on which server exchanges data with client */
