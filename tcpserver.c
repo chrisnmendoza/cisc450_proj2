@@ -11,6 +11,7 @@
 #include <unistd.h>         /* for close */
 
 #define STRING_SIZE 1024   
+#define BUFF_LEN 84 //visitor name 80 digits, null character, commas, spaces, EOF
 
 /* SERV_TCP_PORT is the port number on which the server listens for
    incoming requests from clients. You should change this to a different
@@ -26,14 +27,55 @@ const char serverTravelLocation[] = "Long-Island"; //size = 12 with null-termina
 //unsigned int == 4 bytes
 //struct of all messages
 struct Message {
-   unsigned short int stepNum;
-   unsigned short int clientPortNum;
-   unsigned short int serverPortNum;
+   unsigned short int step;
+   unsigned short int clientPort;
+   unsigned short int serverPort;
    unsigned short int secretCode;
    char* text;
 };
 
+struct Visitor {
+   unsigned short int currentStep;
+   unsigned short int currentClientPort;
+   char currentClientName[80];
+};
+
+struct Visitor visitor;
+
+int getVisitorData(FILE *fp) {
+   int scanResult;
+   char visitorBuffer[BUFF_LEN];
+   fscanf(fp,"%s",visitorBuffer);
+   sscanf(visitorBuffer, "%hu", &(visitor.currentStep));
+   printf("step: %hu\n",visitor.currentStep);
+   fscanf(fp,"%s",visitorBuffer);
+   sscanf(visitorBuffer, "%hu", &(visitor.currentClientPort));
+   printf("client port: %hu\n",visitor.currentClientPort);
+   scanResult = fscanf(fp,"%s",visitorBuffer);
+   strncpy(visitor.currentClientName,visitorBuffer,BUFF_LEN-1);
+   printf("client name: %s\n",visitor.currentClientName);
+   return scanResult;
+}
+
 int main(void) {
+
+   FILE *fp;
+   char *line = NULL;
+   size_t len = 0;
+   ssize_t nread;
+   //char travelBuff[98]; //step 1 digit, port number 5 digits, secret code 5 digits, place 80 digits, null character, and spaces and commas
+   int stepNum;
+
+   fp = fopen("./Visitors.txt", "r");
+   int scanResult;
+
+   while(scanResult != EOF) {
+      scanResult = getVisitorData(fp);
+      if(scanResult == EOF) {
+         printf("scan gave value of %d, which is EOF\n",scanResult);
+      }
+   }
+   fclose(fp);
 
    int sock_server;  /* Socket on which server listens to clients */
    int sock_connection;  /* Socket on which server exchanges data with client */
