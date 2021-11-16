@@ -11,6 +11,7 @@
 #include <unistd.h>         /* for close */
 
 #define STRING_SIZE 1024
+#define MESSAGE_SIZE 90
 
 //hardcoding the following quantities
 const char clientVisitorName[] = "Mendoza-Lizotte"; //size = 16 with null-terminating character
@@ -21,14 +22,42 @@ const char serverTravelLocation[] = "Long-Island"; //size = 12 with null-termina
 //unsigned int == 4 bytes
 //struct of all messages
 struct Message {
-   unsigned short int stepNum;
-   unsigned short int clientPortNum;
-   unsigned short int serverPortNum;
+   unsigned short int step;
+   unsigned short int clientPort;
+   unsigned short int serverPort;
    unsigned short int secretCode;
-   char* text; //**DONT NEED TO DO A NETWORK TO HOST OR VICE VERSA CONVERSION ON STRINGS
+   char text[81];
 };
 
+struct Message message;
+
+
+void messageHton(void) {
+   message.step = htons(message.step);
+   message.clientPort = htons(message.clientPort);
+   message.serverPort = htons(message.serverPort);
+   message.secretCode = htons(message.secretCode);
+}
+
+
+void messageNtoh(void) {
+   message.step = ntohs(message.step);
+   message.clientPort = ntohs(message.clientPort);
+   message.serverPort = ntohs(message.serverPort);
+   message.secretCode = ntohs(message.secretCode);
+}
+
+
 int main(void) {
+
+   char clientText2[] = "fortnites-atfreddys";
+   //existing entry final step
+   //2, 25813, abc
+   message.step = 0;
+   message.clientPort = 25813;
+   message.serverPort = 46298;
+   message.secretCode = serverSecretCode;
+   strncpy(message.text,clientText2,80);
 
    int sock_client;  /* Socket used by client */
 
@@ -98,15 +127,15 @@ int main(void) {
    msg_len = strlen(sentence) + 1;
 
    /* send message */
-   
-   bytes_sent = send(sock_client, sentence, msg_len, 0);
+   messageHton();
+   bytes_sent = send(sock_client, &message, MESSAGE_SIZE, 0);
 
    /* get response from server */
   
-   bytes_recd = recv(sock_client, modifiedSentence, STRING_SIZE, 0); 
-
+   bytes_recd = recv(sock_client, &message, MESSAGE_SIZE, 0); 
+   messageNtoh();
    printf("\nThe response from server is:\n");
-   printf("%s\n\n", modifiedSentence);
+   printf("step: %hu \t text: %s\n\n",message.step, message.text);
 
    /* close the socket */
 
