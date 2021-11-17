@@ -45,7 +45,8 @@ struct Visitor entry; //holds data for an entry in Visitors.txt
 
 int validateInfo(unsigned short int, unsigned short int, unsigned short int);
 
-void updateVisitors() {
+int updateVisitors() {
+   int returnStep = 1;
    FILE *fp = fopen("./Visitors.txt", "r");
    FILE *tempFile = fopen("./tempVisitors.txt","w+");
    int foundMatch = 0;
@@ -60,11 +61,10 @@ void updateVisitors() {
          printf("found match!\n");
          foundMatch = 1;
          if(validateInfo(message.step, message.serverPort, message.secretCode) == 1) {
-            determineSendConfig();
+            returnStep = message.step;
             writeLineToTemp(tempFile, 1);
          }
          else {
-            determineSendConfig();
             writeLineToTemp(tempFile, 0);
          }
       }
@@ -83,6 +83,8 @@ void updateVisitors() {
    fclose(fp);
    fclose(tempFile);
    system("mv ./tempVisitors.txt ./Visitors.txt ");
+   printf("returnstep: %d",returnStep);
+   return returnStep;
 }
 
 
@@ -97,6 +99,7 @@ int getVisitorData(FILE *fp) {
    strncpy(entry.currentClientName,visitorBuffer,BUFF_LEN-1);
    return scanResult;
 }
+
 
 int validateInfo(unsigned short int givenStep, unsigned short int givenServerPort, unsigned short int givenSecret) {
    if((givenStep == 1) || (givenStep == 2 && givenServerPort == SERV_TCP_PORT)
@@ -130,18 +133,39 @@ void writeLineToTemp(FILE *dst, int changeStep) {
 }
 
 
-void determineSendConfig(void) {
-   switch(entry.currentStep) {
+void determineSendConfig(int returnStep) {
+   switch(returnStep) {
       case 1:
          printf("current step is step 1, go to step 2\n");
          printf("server should send step = 2, client and server port numbers, server secret code\n");
+         message.step = 1;
+         message.secretCode = 0;
+         message.serverPort = SERV_TCP_PORT;
+         strncpy(message.text,"*",1);
          break;
       case 2:
          printf("current step is step 2, go to step 3\n");
          printf("server should send step = 3, client and server port numbers, secret code, and server's travel location\n");
+         message.step = 2;
+         message.serverPort = SERV_TCP_PORT;
+         message.secretCode = serverSecretCode;
+         strncpy(message.text,"*",1);
+         break;
+      case 0:
+         printf("current step is step 2, go to step 3\n");
+         printf("server should send step = 3, client and server port numbers, secret code, and server's travel location\n");
+         message.step = 3;
+         message.serverPort = SERV_TCP_PORT;
+         message.secretCode = serverSecretCode;
+         strncpy(message.text,serverTravelLocation,80);
          break;
       default:
          printf("idk a default\n");
+         message.step = 1;
+         message.secretCode = 0;
+         message.serverPort = SERV_TCP_PORT;
+         strncpy(message.text,"*",80);
+         break;
    }
 }
 
@@ -165,7 +189,7 @@ int main(void) {
    //for testing purposes, hard code what a message WOULD send
    //assume sending first message on the port
    char clientText[] = "*";
-
+/*
    //new entry
    message.step = 1;
    message.clientPort = 19624;
@@ -199,6 +223,8 @@ int main(void) {
    message.secretCode = serverSecretCode;
    strncpy(message.text,clientText2,80);
    updateVisitors();
+*/
+   char clientText2[] = "fortnites-atfreddys";
 
    int sock_server;  /* Socket on which server listens to clients */
    int sock_connection;  /* Socket on which server exchanges data with client */
@@ -274,7 +300,8 @@ int main(void) {
       bytes_recd = recv(sock_connection, &message, MESSAGE_SIZE, 0);
       printf("bytes received: %d\n",bytes_recd);
       messageNtoh();
-      updateVisitors();
+      int returnStep = updateVisitors();
+      determineSendConfig(returnStep);
 
       if (bytes_recd > 0){
          printf("Received Sentence is:\n");
@@ -283,8 +310,6 @@ int main(void) {
 
         /* prepare the message to send */
 
-         strncpy(message.text,clientText2,80);
-         message.step = 100;
          messageHton();
          /* send message */
  

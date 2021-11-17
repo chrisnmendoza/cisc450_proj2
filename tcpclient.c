@@ -53,11 +53,11 @@ int main(void) {
    char clientText2[] = "fortnites-atfreddys";
    //existing entry final step
    //2, 25813, abc
-   message.step = 0;
-   message.clientPort = 25813;
+   message.step = 2;
+   message.clientPort = 12345;
    message.serverPort = 46298;
-   message.secretCode = serverSecretCode;
-   strncpy(message.text,clientText2,80);
+   message.secretCode = 0;
+   strncpy(message.text,"*",80);
 
    int sock_client;  /* Socket used by client */
 
@@ -135,7 +135,7 @@ int main(void) {
    bytes_recd = recv(sock_client, &message, MESSAGE_SIZE, 0); 
    messageNtoh();
    printf("\nThe response from server is:\n");
-   printf("step: %hu \t text: %s\n\n",message.step, message.text);
+   printf("step: %hu \t code: %hu \t text: %s\n\n",message.step, message.secretCode, message.text);
 
    /* close the socket */
 
