@@ -43,7 +43,7 @@ struct Message message;
 struct Destination destination;
 
 
-int constructMessage() {
+int constructMessage(int serverPort) {
    int returnStep = 1;
    FILE *fp = fopen("./Travel.txt", "r");
    int foundMatch = 0;
@@ -51,7 +51,7 @@ int constructMessage() {
    message.clientPort = clientPort;
    strncpy(message.text,"*",80);
    while((scanResult = getDestinationData(fp)) != EOF) {
-      if(destination.currentServerPort == message.serverPort) {
+      if(destination.currentServerPort == serverPort) {
          printf("found match! Using travel data to configure message\n");
          if(destination.currentStep == 3) {
             printf("already did step 3, ignoring!\n");
@@ -111,7 +111,6 @@ int updateDestinations() {
          writeLineToTemp(tempFile, 1);
       }
       else {
-         printf("not a match\n");
          writeLineToTemp(tempFile, 0);
       }
    }
@@ -136,7 +135,6 @@ int getDestinationData(FILE *fp) {
    int scanResult;
    char destinationBuffer[BUFF_LEN];
    fscanf(fp,"%s",destinationBuffer);
-   printf("fortnite: %s\n",destinationBuffer);
    sscanf(destinationBuffer, "%hu", &(destination.currentStep));
    fscanf(fp,"%s",destinationBuffer);
    sscanf(destinationBuffer, "%hu", &(destination.currentServerPort));
@@ -159,55 +157,8 @@ void writeLineToTemp(FILE *dst, int changeStep) {
    fputs(tempFileBuffer,dst);
 }
 
-//TODO: SENDING
-/*
-void determineSendConfig(int returnStep) {
-   switch(returnStep) {
-      case 1:
-         printf("current step is step 1, go to step 2\n");
-         printf("server should send step = 2, client and server port numbers, server secret code\n");
-         message.step = 1;
-         message.secretCode = 0;
-         message.serverPort = SERV_TCP_PORT;
-         strncpy(message.text,"*",1);
-         break;
-      case 2:
-         printf("current step is step 2, go to step 3\n");
-         printf("server should send step = 3, client and server port numbers, secret code, and server's travel location\n");
-         message.step = 2;
-         message.serverPort = SERV_TCP_PORT;
-         message.secretCode = serverSecretCode;
-         strncpy(message.text,"*",1);
-         break;
-      case 0:
-         printf("current step is step 2, go to step 3\n");
-         printf("server should send step = 3, client and server port numbers, secret code, and server's travel location\n");
-         message.step = 3;
-         message.serverPort = SERV_TCP_PORT;
-         message.secretCode = serverSecretCode;
-         strncpy(message.text,serverTravelLocation,80);
-         break;
-      default:
-         printf("idk a default\n");
-         message.step = 1;
-         message.secretCode = 0;
-         message.serverPort = SERV_TCP_PORT;
-         strncpy(message.text,"*",80);
-         break;
-   }
-}*/
-
 
 int main(void) {
-
-   char clientText2[] = "fortnites-atfreddys";
-   //existing entry final step
-   //2, 25813, abc
-   message.step = 0;
-   message.clientPort = clientPort;
-   message.serverPort = 46298;
-   message.secretCode = serverSecretCode;
-   strncpy(message.text,"eek",80);
 
    int sock_client;  /* Socket used by client */
 
@@ -218,8 +169,6 @@ int main(void) {
    char server_hostname[STRING_SIZE]; /* Server's hostname */
    unsigned short server_port;  /* Port number used by server (remote port) */
 
-   char sentence[STRING_SIZE];  /* send message */
-   char modifiedSentence[STRING_SIZE]; /* receive message */
    unsigned int msg_len;  /* length of message */                      
    int bytes_sent, bytes_recd; /* number of bytes sent or received */
   
@@ -253,8 +202,11 @@ int main(void) {
    printf("hardcoding 46298 for now\n");
    //scanf("%hu", &server_port); PUT BACK IN WHEN NOT HARD CODING
    server_port = (unsigned short int)46298;//REMOVE WHEN NOT HARDCODING
-   constructMessage();//hardcoded for own server
-
+   int messageStatus = constructMessage(server_port);//hardcoded for own server
+   if(messageStatus < 0) { //client already completed all steps
+      printf("exiting\n");
+      exit(0);
+   }
    /* Clear server address structure and initialize with server address */
    memset(&server_addr, 0, sizeof(server_addr));
    server_addr.sin_family = AF_INET;
@@ -270,12 +222,6 @@ int main(void) {
       close(sock_client);
       exit(1);
    }
-  
-   /* user interface */
-
-   printf("Please input a sentence:\n");
-   scanf("%s", sentence);
-   msg_len = strlen(sentence) + 1;
 
    /* send message */
    messageHton();
