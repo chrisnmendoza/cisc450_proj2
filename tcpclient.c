@@ -232,7 +232,7 @@ int main(void) {
    bytes_recd = recv(sock_client, &message, MESSAGE_SIZE, 0); 
    messageNtoh();
    printf("\nThe response from server is:\n");
-   printf("step: %hu \t code: %hu \t text: %s\n\n",message.step, message.secretCode, message.text);
+   printf("step: %hu \t server port: %hu \t code: %hu \t text: %s\n\n",message.step, message.serverPort, message.secretCode, message.text);
    updateDestinations();
    /* close the socket */
 
