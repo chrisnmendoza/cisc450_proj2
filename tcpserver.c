@@ -83,7 +83,7 @@ int updateVisitors() {
    fclose(fp);
    fclose(tempFile);
    system("mv ./tempVisitors.txt ./Visitors.txt ");
-   printf("returnstep: %d",returnStep);
+   printf("returnstep: %d\n",returnStep);
    return returnStep;
 }
 
