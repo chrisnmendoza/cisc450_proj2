@@ -179,6 +179,11 @@ int main(void) {
    printf("hardcoding localhost for now\n");
    //scanf("%s", server_hostname); PUT BACK IN WHEN NOT HARD CODING
    sprintf(server_hostname,"localhost");//REMOVE WHEN NOT HARDCODING
+
+   if ((server_hp = gethostbyname(server_hostname)) == NULL) {
+      perror("Client: invalid server hostname");
+      exit(1);
+   }
    
    for(unsigned short int i = 46000; i < 46999; i++) {   
       server_port = i;
@@ -196,13 +201,8 @@ int main(void) {
                already been bound. */
 
       /* initialize server address information */
+   
 
-
-      if ((server_hp = gethostbyname(server_hostname)) == NULL) {
-         perror("Client: invalid server hostname");
-         close(sock_client);
-         exit(1);
-      }
 
       int messageStatus = constructMessage(server_port);//hardcoded for own server
       if(messageStatus < 0) { //client already completed all steps
@@ -237,8 +237,8 @@ int main(void) {
       printf("\nThe response from server is:\n");
       printf("step: %hu \t server port: %hu \t code: %hu \t text: %s\n\n",message.step, message.serverPort, message.secretCode, message.text);
       updateDestinations();
+      
       /* close the socket */
-
       close (sock_client);
    }
 
