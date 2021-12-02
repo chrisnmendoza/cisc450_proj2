@@ -17,9 +17,8 @@
 
 //hardcoding the following quantities
 const char clientVisitorName[] = "Mendoza-Lizotte"; //size = 16 with null-terminating character
-const unsigned short int serverSecretCode = 54321;
 const char serverTravelLocation[] = "Long-Island"; //size = 12 with null-terminating character
-const unsigned short int clientPort = 23456;
+const unsigned short int clientPort = 48298;
 
 //unsigned short int == 2 bytes
 //unsigned int == 4 bytes
@@ -43,6 +42,15 @@ struct Message message;
 struct Destination destination;
 
 
+/* function prototypes */
+int constructMessage(int serverPort);
+void messageHton(void);
+void messageNtoh(void);
+int updateDestinations();
+int getDestinationData(FILE *fp);
+void writeLineToTemp(FILE *dst, int changeStep);
+
+
 //based on the given entry of a given port number, constructs message in global variable message
 int constructMessage(int serverPort) {
    int returnStep = 1;
@@ -53,18 +61,13 @@ int constructMessage(int serverPort) {
    strncpy(message.text,"*",80);
    while((scanResult = getDestinationData(fp)) != EOF) {
       if(destination.currentServerPort == serverPort) {
-         printf("found match! Using travel data to configure message\n");
          if(destination.currentStep == 3) {
-            printf("already did all steps, continuing!\n");
             return -1 ;
          }
          else {
-            message.step = (destination.currentStep + 1) % 3;
-            printf("messageStep: %d\n",message.step);
-            if(message.step == 0) {
-               printf("giving visitor name\n");
+            message.step = (destination.currentStep + 1);
+            if(message.step == 3) {
                strncpy(message.text,clientVisitorName,80);
-               printf("message text is: %s\n",message.text);
             }
          }
          message.serverPort = destination.currentServerPort;
@@ -98,7 +101,7 @@ void messageNtoh(void) {
 
 
 //updates Travel.txt based on message received
-int updateDestinations() {
+int updateDestinations(void) {
    int returnStep = 1;
    FILE *fp = fopen("./Travel.txt", "r");
    FILE *tempFile = fopen("./tempTravel.txt","w+");
@@ -111,7 +114,6 @@ int updateDestinations() {
       }
       firstLine = 0;
       if(destination.currentServerPort == message.serverPort) {
-         printf("found match!\n");
          foundMatch = 1;
          writeLineToTemp(tempFile, 1);
       }
@@ -124,14 +126,13 @@ int updateDestinations() {
       destination.currentServerPort = message.serverPort;
       destination.secretCode = message.secretCode;
       strncpy(destination.location,message.text,80);
-      printf("no existing entries match, make new entry\n");
       fputs("\n",tempFile);
       writeLineToTemp(tempFile, 0);
    }
+   fputs("\n",tempFile);
    fclose(fp);
    fclose(tempFile);
    system("mv ./tempTravel.txt ./Travel.txt ");
-   printf("returnstep: %d\n",returnStep);
    return returnStep;
 }
 
@@ -179,8 +180,6 @@ int main(void) {
    unsigned int msg_len;  /* length of message */                      
    int bytes_sent, bytes_recd; /* number of bytes sent or received */
   
-   printf("Enter hostname of server: ");
-   printf("hardcoding localhost for now\n");
    //scanf("%s", server_hostname); PUT BACK IN WHEN NOT HARD CODING
    sprintf(server_hostname,"localhost");//REMOVE WHEN NOT HARDCODING
 
@@ -189,7 +188,7 @@ int main(void) {
       exit(1);
    }
    
-   for(unsigned short int i = 46000; i < 46999; i++) {   
+   for(unsigned short int i = 48000; i < 48999; i++) {   
       server_port = i;
       /* open a socket */
       if ((sock_client = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
@@ -210,7 +209,6 @@ int main(void) {
 
       int messageStatus = constructMessage(server_port);//hardcoded for own server
       if(messageStatus < 0) { //client already completed all steps
-         printf("continuing\n");
          continue;         
       }
       /* Clear server address structure and initialize with server address */
@@ -232,14 +230,11 @@ int main(void) {
       /* send message */
       messageHton();
       bytes_sent = send(sock_client, &message, MESSAGE_SIZE, 0);
-      printf("sent with text: %s\n",message.text);
 
       /* get response from server */
    
       bytes_recd = recv(sock_client, &message, MESSAGE_SIZE, 0); 
       messageNtoh();
-      printf("\nThe response from server is:\n");
-      printf("step: %hu \t server port: %hu \t code: %hu \t text: %s\n\n",message.step, message.serverPort, message.secretCode, message.text);
       updateDestinations();
       
       /* close the socket */
