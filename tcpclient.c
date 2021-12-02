@@ -19,7 +19,7 @@
 const char clientVisitorName[] = "Mendoza-Lizotte"; //size = 16 with null-terminating character
 const unsigned short int serverSecretCode = 54321;
 const char serverTravelLocation[] = "Long-Island"; //size = 12 with null-terminating character
-const unsigned short int clientPort = 12345;
+const unsigned short int clientPort = 23456;
 
 //unsigned short int == 2 bytes
 //unsigned int == 4 bytes
@@ -59,8 +59,11 @@ int constructMessage(int serverPort) {
          }
          else {
             message.step = (destination.currentStep + 1) % 3;
+            printf("messageStep: %d\n",message.step);
             if(message.step == 0) {
+               printf("giving visitor name\n");
                strncpy(message.text,clientVisitorName,80);
+               printf("message text is: %s\n",message.text);
             }
          }
          message.serverPort = destination.currentServerPort;
@@ -226,6 +229,7 @@ int main(void) {
    /* send message */
    messageHton();
    bytes_sent = send(sock_client, &message, MESSAGE_SIZE, 0);
+   printf("sent with text: %s\n",message.text);
 
    /* get response from server */
   
