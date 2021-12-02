@@ -54,8 +54,8 @@ int constructMessage(int serverPort) {
       if(destination.currentServerPort == serverPort) {
          printf("found match! Using travel data to configure message\n");
          if(destination.currentStep == 3) {
-            printf("already did step 3, ignoring!\n");
-            return -1;
+            printf("already did all steps, continuing!\n");
+            return -1 ;
          }
          else {
             message.step = (destination.currentStep + 1) % 3;
@@ -175,70 +175,72 @@ int main(void) {
    unsigned int msg_len;  /* length of message */                      
    int bytes_sent, bytes_recd; /* number of bytes sent or received */
   
-   /* open a socket */
-
-   if ((sock_client = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
-      perror("Client: can't open stream socket");
-      exit(1);
-   }
-
-   /* Note: there is no need to initialize local client address information 
-            unless you want to specify a specific local port
-            (in which case, do it the same way as in udpclient.c).
-            The local address initialization and binding is done automatically
-            when the connect function is called later, if the socket has not
-            already been bound. */
-
-   /* initialize server address information */
-
    printf("Enter hostname of server: ");
    printf("hardcoding localhost for now\n");
    //scanf("%s", server_hostname); PUT BACK IN WHEN NOT HARD CODING
    sprintf(server_hostname,"localhost");//REMOVE WHEN NOT HARDCODING
-   if ((server_hp = gethostbyname(server_hostname)) == NULL) {
-      perror("Client: invalid server hostname");
-      close(sock_client);
-      exit(1);
+   
+   for(unsigned short int i = 46000; i < 46999; i++) {   
+      server_port = i;
+      /* open a socket */
+      if ((sock_client = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+         //perror("Client: can't open stream socket");
+         exit(1);
+      }
+
+      /* Note: there is no need to initialize local client address information 
+               unless you want to specify a specific local port
+               (in which case, do it the same way as in udpclient.c).
+               The local address initialization and binding is done automatically
+               when the connect function is called later, if the socket has not
+               already been bound. */
+
+      /* initialize server address information */
+
+
+      if ((server_hp = gethostbyname(server_hostname)) == NULL) {
+         perror("Client: invalid server hostname");
+         close(sock_client);
+         exit(1);
+      }
+
+      int messageStatus = constructMessage(server_port);//hardcoded for own server
+      if(messageStatus < 0) { //client already completed all steps
+         printf("continuing\n");
+         continue;         
+      }
+      /* Clear server address structure and initialize with server address */
+      memset(&server_addr, 0, sizeof(server_addr));
+      server_addr.sin_family = AF_INET;
+      memcpy((char *)&server_addr.sin_addr, server_hp->h_addr,
+                                       server_hp->h_length);
+      server_addr.sin_port = htons(server_port);
+
+      /* connect to the server */
+         
+      if (connect(sock_client, (struct sockaddr *) &server_addr, 
+                                       sizeof (server_addr)) < 0) {
+         //perror("Client: can't connect to server");
+         close(sock_client);
+         continue;
+      }
+
+      /* send message */
+      messageHton();
+      bytes_sent = send(sock_client, &message, MESSAGE_SIZE, 0);
+      printf("sent with text: %s\n",message.text);
+
+      /* get response from server */
+   
+      bytes_recd = recv(sock_client, &message, MESSAGE_SIZE, 0); 
+      messageNtoh();
+      printf("\nThe response from server is:\n");
+      printf("step: %hu \t server port: %hu \t code: %hu \t text: %s\n\n",message.step, message.serverPort, message.secretCode, message.text);
+      updateDestinations();
+      /* close the socket */
+
+      close (sock_client);
    }
 
-   printf("Enter port number for server: ");
-   printf("hardcoding 46298 for now\n");
-   //scanf("%hu", &server_port); PUT BACK IN WHEN NOT HARD CODING
-   server_port = (unsigned short int)46298;//REMOVE WHEN NOT HARDCODING
-   int messageStatus = constructMessage(server_port);//hardcoded for own server
-   if(messageStatus < 0) { //client already completed all steps
-      printf("exiting\n");
-      exit(0);
-   }
-   /* Clear server address structure and initialize with server address */
-   memset(&server_addr, 0, sizeof(server_addr));
-   server_addr.sin_family = AF_INET;
-   memcpy((char *)&server_addr.sin_addr, server_hp->h_addr,
-                                    server_hp->h_length);
-   server_addr.sin_port = htons(server_port);
 
-    /* connect to the server */
- 		
-   if (connect(sock_client, (struct sockaddr *) &server_addr, 
-                                    sizeof (server_addr)) < 0) {
-      perror("Client: can't connect to server");
-      close(sock_client);
-      exit(1);
-   }
-
-   /* send message */
-   messageHton();
-   bytes_sent = send(sock_client, &message, MESSAGE_SIZE, 0);
-   printf("sent with text: %s\n",message.text);
-
-   /* get response from server */
-  
-   bytes_recd = recv(sock_client, &message, MESSAGE_SIZE, 0); 
-   messageNtoh();
-   printf("\nThe response from server is:\n");
-   printf("step: %hu \t server port: %hu \t code: %hu \t text: %s\n\n",message.step, message.serverPort, message.secretCode, message.text);
-   updateDestinations();
-   /* close the socket */
-
-   close (sock_client);
 }
