@@ -43,6 +43,7 @@ struct Message message;
 struct Destination destination;
 
 
+//based on the given entry of a given port number, constructs message in global variable message
 int constructMessage(int serverPort) {
    int returnStep = 1;
    FILE *fp = fopen("./Travel.txt", "r");
@@ -96,6 +97,7 @@ void messageNtoh(void) {
 }
 
 
+//updates Travel.txt based on message received
 int updateDestinations() {
    int returnStep = 1;
    FILE *fp = fopen("./Travel.txt", "r");
@@ -134,6 +136,7 @@ int updateDestinations() {
 }
 
 
+//gets data of current entry and puts it in global variable destination
 int getDestinationData(FILE *fp) {
    int scanResult;
    char destinationBuffer[BUFF_LEN];
@@ -149,6 +152,7 @@ int getDestinationData(FILE *fp) {
 }
 
 
+//Writes specified step in changeStep into a line in tempTravel.txt
 void writeLineToTemp(FILE *dst, int changeStep) {
    char tempFileBuffer[DESTINATION_LEN];
    if(changeStep) { //means found entry match

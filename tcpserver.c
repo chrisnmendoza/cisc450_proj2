@@ -45,6 +45,8 @@ struct Visitor entry; //holds data for an entry in Visitors.txt
 
 int validateInfo(unsigned short int, unsigned short int, unsigned short int);
 
+
+//updates entries in Visitors.txt
 int updateVisitors() {
    int returnStep = 1;
    FILE *fp = fopen("./Visitors.txt", "r");
@@ -87,6 +89,7 @@ int updateVisitors() {
 }
 
 
+//puts entry data into global var entry
 int getVisitorData(FILE *fp) {
    int scanResult;
    char visitorBuffer[BUFF_LEN];
@@ -156,6 +159,7 @@ void writeLineToTemp(FILE *dst, int changeStep) {
 }
 
 
+//configures what to send in global var message
 void determineSendConfig(int returnStep) {
    switch(returnStep) {
       case 1:
@@ -209,46 +213,8 @@ void messageNtoh(void) {
    message.secretCode = ntohs(message.secretCode);
 }
 
+
 int main(void) {
-   //for testing purposes, hard code what a message WOULD send
-   //assume sending first message on the port
-   char clientText[] = "*";
-/*
-   //new entry
-   message.step = 1;
-   message.clientPort = 19624;
-   message.serverPort = 0;
-   message.secretCode = 0;
-   strncpy(message.text,clientText,80);
-   updateVisitors();
-   
-   //existing entry
-   message.step = 2;
-   message.clientPort = 12345;
-   message.serverPort = SERV_TCP_PORT;
-   message.secretCode = 0;
-   strncpy(message.text,clientText,80);
-   updateVisitors();
-
-   //existing entry bad secret code
-   message.step = 0;
-   message.clientPort = 12345;
-   message.serverPort = SERV_TCP_PORT;
-   message.secretCode = serverSecretCode - 5;
-   strncpy(message.text,clientText,80);
-   updateVisitors();
-
-   char clientText2[] = "fortnites-atfreddys";
-   //existing entry final step
-   //2, 25813, abc
-   message.step = 0;
-   message.clientPort = 25813;
-   message.serverPort = SERV_TCP_PORT;
-   message.secretCode = serverSecretCode;
-   strncpy(message.text,clientText2,80);
-   updateVisitors();
-*/
-   char clientText2[] = "fortnites-atfreddys";
 
    int sock_server;  /* Socket on which server listens to clients */
    int sock_connection;  /* Socket on which server exchanges data with client */
@@ -269,14 +235,12 @@ int main(void) {
    unsigned int i;  /* temporary loop variable */
 
    /* open a socket */
-
    if ((sock_server = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
       perror("Server: can't open stream socket");
       exit(1);                                                
    }
 
    /* initialize server address information */
-    
    memset(&server_addr, 0, sizeof(server_addr));
    server_addr.sin_family = AF_INET;
    server_addr.sin_addr.s_addr = htonl (INADDR_ANY);  /* This allows choice of
@@ -286,7 +250,6 @@ int main(void) {
    server_addr.sin_port = htons(server_port);
 
    /* bind the socket to the local server port */
-
    if (bind(sock_server, (struct sockaddr *) &server_addr,
                                     sizeof (server_addr)) < 0) {
       perror("Server: can't bind to local address");
@@ -295,7 +258,6 @@ int main(void) {
    }                     
 
    /* listen for incoming requests from clients */
-
    if (listen(sock_server, 50) < 0) {    /* 50 is the max number of pending */
       perror("Server: error on listen"); /* requests that will be queued */
       close(sock_server);
@@ -306,7 +268,6 @@ int main(void) {
    client_addr_len = sizeof (client_addr);
 
    /* wait for incoming connection requests in an indefinite loop */
-
    for (;;) {
 
       sock_connection = accept(sock_server, (struct sockaddr *) &client_addr, 
@@ -320,7 +281,6 @@ int main(void) {
       }
  
       /* receive the message */
-
       bytes_recd = recv(sock_connection, &message, MESSAGE_SIZE, 0);
       printf("bytes received: %d\n",bytes_recd);
 
@@ -335,13 +295,12 @@ int main(void) {
          determineSendConfig(returnStep);
 
          messageHton();
+
          /* send message */
- 
          bytes_sent = send(sock_connection, &message, MESSAGE_SIZE, 0);
       }
 
       /* close the socket */
-
       close(sock_connection);
    } 
 }
